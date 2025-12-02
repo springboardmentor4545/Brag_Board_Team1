@@ -31,6 +31,12 @@ class MeUpdate(BaseModel):
     password: Optional[str] = None
 
 
+class UpdateMe(BaseModel):
+    name: Optional[str] = None
+    department: Optional[str] = None
+    password: Optional[str] = None
+
+
 class MeOut(BaseModel):
     id: int
     name: str
@@ -65,100 +71,20 @@ def user_me(current_user=Depends(auth.get_current_user)):
 
 
 @router.put("/user/me")
-def update_me(
-    payload: MeUpdate,
+async def update_me(
+    update: UpdateMe,
     db: Session = Depends(database.get_db),
     current_user=Depends(auth.get_current_user),
 ):
-    changed = False
-    name_changed = False
-    password_changed = False
-    old_name = current_user.name
+    if update.name is not None:
+        current_user.name = update.name
 
-    if payload.name is not None:
-        new_name = payload.name.strip()
-        if not new_name:
-            raise HTTPException(status_code=400, detail="Name cannot be blank")
-        if new_name != current_user.name:
-            current_user.name = new_name
-            changed = True
-            name_changed = True
+    if update.department is not None:
+        current_user.department = update.department
 
-    if payload.department is not None:
-        current_user.department = payload.department
-        changed = True
-
-    if payload.designation is not None:
-        current_user.designation = payload.designation
-        changed = True
-
-    if payload.profile_pic is not None:
-        current_user.profile_pic = payload.profile_pic
-        changed = True
-
-    if payload.password is not None and payload.password.strip():
-        # Require current_password to be provided and correct when changing password
-        current_plain = (payload.current_password or "").strip()
-        if not current_plain:
-            raise HTTPException(
-                status_code=400,
-                detail="Current password is required to change your password",
-            )
-        if not auth.verify_password(current_plain, current_user.password):
-            raise HTTPException(
-                status_code=400,
-                detail="Current password is incorrect",
-            )
-
-        try:
-            pwd = payload.password.strip()
-            pwd_pattern = re.compile(r"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$")
-            if not pwd_pattern.match(pwd):
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "Password must be at least 8 characters and include an uppercase "
-                        "letter, a number, and a special character"
-                    ),
-                )
-            current_user.password = auth.hash_password(pwd)
-            changed = True
-            password_changed = True
-        except HTTPException:
-            # Re-raise validation errors as-is
-            raise
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid password")
-
-    if not changed:
-        return {"message": "No changes"}
-
-    db.add(current_user)
-
-    try:
-        if name_changed:
-            db.add(
-                models.AdminLog(
-                    admin_id=current_user.id,
-                    action=f"Username updated: {new_name}",
-                    target_id=current_user.id,
-                    target_type="user",
-                )
-            )
-        if password_changed:
-            db.add(
-                models.AdminLog(
-                    admin_id=current_user.id,
-                    action="Password Changed - Your password was updated.",
-                    target_id=current_user.id,
-                    target_type="user",
-                )
-            )
-    except Exception:
-        pass
+    if update.password:
+        current_user.password = auth.hash_password(update.password)
 
     db.commit()
-    # Distinguish password-change response for clearer frontend handling
-    if password_changed and not name_changed:
-        return {"message": "Password updated successfully"}
-    return {"message": "Profile updated"}
+    db.refresh(current_user)
+    return {"message": "Profile updated", "user": current_user}

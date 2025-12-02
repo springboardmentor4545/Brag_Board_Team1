@@ -13,6 +13,8 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [departments, setDepartments] = useState([]) // retained for display; no edit UI
   const [saving, setSaving] = useState(false)
+  const [editDept, setEditDept] = useState('')
+  const [savingDept, setSavingDept] = useState(false)
   const [msg, setMsg] = useState('')
   const [editMode, setEditMode] = useState(false)
   const [showNameModal, setShowNameModal] = useState(false)
@@ -93,6 +95,20 @@ export default function Profile() {
     }
   }
 
+  const saveDepartment = async () => {
+    try {
+      setSavingDept(true)
+      await updateMe({ department: editDept })
+      toast.showSuccess('Department updated')
+      setEditMode(false)
+      window.location.reload()
+    } catch (error) {
+      toast.showError(error?.response?.data?.detail || 'Failed to update department')
+    } finally {
+      setSavingDept(false)
+    }
+  }
+
   const openPassModal = () => { if (!canEdit) return; setPwdDraft({ current: '', next: '', confirm: '' }); setShowPassModal(true) }
   const savePassword = async () => {
     const currentPwd = pwdDraft.current.trim()
@@ -168,28 +184,66 @@ export default function Profile() {
                 <input className="w-full px-3 py-2 border rounded-md bg-gray-50 text-gray-600" value={user?.email || ''} readOnly />
               </div>
               {!editMode && (
-                <div className="md:col-span-2 flex items-center justify-end">
-                  <button onClick={() => setEditMode(true)} className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">Edit Profile</button>
+                <div className="md:col-span-2 flex justify-end mt-4">
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                  >
+                    Edit Profile
+                  </button>
                 </div>
               )}
               {editMode && (
                 <>
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <label className="block text-sm text-gray-600 mb-1">Username</label>
-                      <input className="w-full px-3 py-2 border rounded-md bg-white" value={form.name} readOnly />
+                  <div className="md:col-span-2 mt-4 p-4 rounded-lg border bg-gray-50 space-y-3">
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <label className="block text-sm text-gray-600 mb-1">Username</label>
+                        <input className="w-full px-3 py-2 border rounded-md bg-white" value={form.name} readOnly />
+                      </div>
+                      <button onClick={openNameModal} disabled={saving} className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60">Edit Name</button>
                     </div>
-                    <button onClick={openNameModal} disabled={saving} className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60">Edit Name</button>
-                  </div>
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <label className="block text-sm text-gray-600 mb-1">Password</label>
-                      <input type="password" className="w-full px-3 py-2 border rounded-md bg-gray-50" value="********" readOnly />
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <label className="block text-sm text-gray-600 mb-1">Password</label>
+                        <input type="password" className="w-full px-3 py-2 border rounded-md bg-gray-50" value="********" readOnly />
+                      </div>
+                      <button onClick={openPassModal} disabled={saving} className="px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">Edit Password</button>
                     </div>
-                    <button onClick={openPassModal} disabled={saving} className="px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">Edit Password</button>
                   </div>
-                  <div className="md:col-span-2 flex items-center justify-end">
-                    <button onClick={() => setEditMode(false)} className="px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200">Done</button>
+
+                  <div className="md:col-span-2 mt-4 p-4 rounded-lg border bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Department
+                    </label>
+
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={editDept}
+                        onChange={(e) => setEditDept(e.target.value)}
+                        className="px-3 py-2 border rounded-md text-sm flex-1"
+                      >
+                        {departments.map((d) => (
+                          <option key={d}>{d}</option>
+                        ))}
+                      </select>
+
+                      <button
+                        onClick={saveDepartment}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 flex justify-end mt-4">
+                    <button
+                      onClick={() => setEditMode(false)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    >
+                      Done
+                    </button>
                   </div>
                 </>
               )}

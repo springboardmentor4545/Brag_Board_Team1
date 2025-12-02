@@ -40,7 +40,10 @@ export const reportShoutout = async (payload) => (await api.post('/shoutout/repo
 export const reportComment = async (payload) => (await api.post('/comment/report', payload)).data
 
 // Profile update
-export const updateMe = async (payload) => (await api.put('/user/me', payload)).data
+export async function updateMe(data) {
+  const res = await api.put('/user/me', data)
+  return res.data
+}
 
 // Admin
 export const adminUsers = async () => (await api.get('/admin/users')).data
