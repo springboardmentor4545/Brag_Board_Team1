@@ -1,0 +1,23 @@
+# requirements.txt for FastAPI Backend
+
+# Web Framework and Server
+fastapi==0.111.0 # Or the latest stable version
+uvicorn[standard]==0.30.1 # ASGI server to run FastAPI
+
+# Database (SQLAlchemy ORM)
+sqlalchemy==2.0.30 # Core ORM
+psycopg2-binary==2.9.9 # Python adapter for PostgreSQL database
+
+# Authentication and Security
+passlib[bcrypt]==1.7.4 # Used for password hashing (bcrypt)
+python-jose[cryptography]==3.3.0 # Used for JWT creation and verification
+python-dotenv==1.0.1 # Used to load environment variables from .env file
+
+# Data Validation
+pydantic==2.7.4 # Used by FastAPI for data validation (BaseModel)
+
+# Production dependencies
+npm install react react-dom react-router-dom
+
+# Development dependencies (for styling and build)
+npm install -D tailwindcss postcss autoprefixer vite
